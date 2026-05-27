@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 200" width="560" height="200">
+  <defs>
+    <clipPath id="grand-clip">
+      <text x="4" y="118"
+        font-family="'Arial Black','Arial','Helvetica Neue',sans-serif"
+        font-weight="900"
+        font-size="136"
+        letter-spacing="-2">GRAND</text>
+    </clipPath>
+  </defs>
+
+  <!-- Landscape scene clipped to the letters GRAND -->
+  <g clip-path="url(#grand-clip)">
+    <!-- Sky blue background -->
+    <rect x="0" y="0" width="560" height="130" fill="#27B7E8"/>
+
+    <!-- Orange sun -->
+    <circle cx="332" cy="36" r="34" fill="#F5A300"/>
+
+    <!-- Back green hills -->
+    <path d="M0,72 C30,58 60,68 90,60 C120,52 155,66 190,57
+             C225,48 260,64 295,55 C330,46 365,62 400,53
+             C435,44 470,60 510,53 C535,48 550,56 560,52
+             L560,130 L0,130 Z" fill="#29903C"/>
+
+    <!-- Front green hills -->
+    <path d="M0,85 C35,68 70,82 110,74 C150,66 185,80 225,72
+             C265,64 300,80 340,72 C380,64 415,80 455,73
+             C490,67 525,78 560,73
+             L560,130 L0,130 Z" fill="#38B84F"/>
+
+    <!-- Orange earth - wavy top edge -->
+    <path d="M0,98 C40,84 80,98 125,90 C170,82 210,98 255,91
+             C300,84 345,98 390,91 C435,84 480,97 520,91
+             C540,88 553,93 560,91
+             L560,130 L0,130 Z" fill="#E87820"/>
+  </g>
+
+  <!-- MENTAL HEALTH -->
+  <text x="280" y="185"
+    font-family="'Arial Black','Arial','Helvetica Neue',sans-serif"
+    font-weight="900"
+    font-size="38"
+    letter-spacing="3"
+    text-anchor="middle"
+    fill="#111111">MENTAL HEALTH</text>
+</svg>

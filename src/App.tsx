@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import './App.css'
 
 const ICON_BLUE = '#5ab8e8'
@@ -139,11 +139,22 @@ const ADMIN_REPORTS = [
   'DMH to Self-Pay Expiration',
   'Error Report',
   'Event Scheduling History',
-  'Events Missing Services_GMH',
+  'Events Missing Services, GMH',
   'Family Assessment Center Admit Log',
   'Grand Outreach Contact Report',
   'Grand Outreach Monthly Report',
+  'Jail Assistance Program',
+  'Jail Diversion Engagement Report',
+  'Medication Administration Record',
+  'Missing Progress Notes',
+  'No-Show Report',
+  'Outcome Measures Summary',
+  'Program Census Report',
+  'Referral Source Summary',
+  'Service Authorization Expiration',
+  'Staff Productivity Report',
   'TSS Referral Tracking Report',
+  'Unsigned Documents Report',
 ]
 
 const REPORT_CATEGORIES = [
@@ -166,7 +177,485 @@ const TIME_SLOTS = [
 
 type ReportsView = 'closed' | 'main' | 'sub'
 
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const DOW_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+const DOW_SHORT = ['S','M','T','W','T','F','S']
+const ATTENDANCE_OPTIONS = ['(Select All)', 'ARV', 'BLANK', 'CAN', 'CMP', 'CRS', 'NSH', 'SCH']
+const STAFF_SUGGESTIONS_DEFAULT = [
+  '9TAL',
+  '10/21/2025',
+  '3XCS, 4YFR, 3CZD, 9HML, 3XXX, 9WVN, 4BLS, 9HRR',
+  '9WVN',
+  '3XCS',
+  '(NULL),3ARP,3BLS,3HRR,3JMN,3XCS,4YFR,9TAL',
+]
+
+const REPORT_ROWS = [
+  { staffCode: '3CZD', clientCode: 'PA',      linked: true,  date: '05/05/2026', time: '01:30 PM', dur: '90', att: 'SCH', components: 'SCH Program: ADULT Location: RC03 Activity: STRNG Attendance: SCH Service Focus: MH POS: OFFICE Tele Provider Location:  Tele Client Location:  - Reminder:  How to answer MCD questions: turns out that was for CN' },
+  { staffCode: '3GRB', clientCode: '1134223', linked: true,  date: '04/17/2026', time: '01:00 PM', dur: '60', att: 'SCH', components: 'SCH Program: ADULT Location: CV01 Activity: INDTH Attendance: SCH Service Focus: MH POS: TELE Tele Provider Location:  Tele Client Location:' },
+  { staffCode: '3MAN', clientCode: '3060465', linked: true,  date: '05/13/2026', time: '04:00 PM', dur: '60', att: 'SCH', components: 'SCH Program: ACHILD Location: WB01 Activity: INDTH Attendance: SCH Service Focus:  POS:  Tele Provider Location:  Tele Client Location:' },
+  { staffCode: '',     clientCode: '3064513', linked: true,  date: '05/07/2026', time: '04:00 PM', dur: '60', att: 'SCH', components: 'SCH Program: SOC Location:  Activity: INDTH Attendance: SCH Service Focus:  POS:  Tele Provider Location:  Tele Client Location:' },
+  { staffCode: '3MCD', clientCode: '1168969', linked: true,  date: '05/05/2026', time: '01:00 PM', dur: '60', att: 'SCH', components: 'SCH Program: ADULT Location: PS02 Activity: INDTH Attendance: SCH Service Focus: MH POS: OFFICE Tele Provider Location:  Tele Client Location:' },
+  { staffCode: '',     clientCode: '1169545', linked: false, date: '03/26/2026', time: '10:00 AM', dur: '60', att: 'SCH', components: 'SCH Program: ADULT Location: PS02 Activity: INDTH Attendance: SCH Service Focus: MH POS: TELE Tele Provider Location:  PS02 Tele Client Location:  CLHO' },
+  { staffCode: '',     clientCode: '1172998', linked: false, date: '05/13/2026', time: '04:00 PM', dur: '60', att: 'SCH', components: 'SCH Program: ADULT Location: PS02 Activity: INDTH Attendance: SCH Service Focus: MH POS: OFFICE Tele Provider Location:  Tele Client Location:' },
+  { staffCode: '',     clientCode: '1182002', linked: false, date: '05/14/2026', time: '12:00 PM', dur: '90', att: 'ARV', components: 'ARV Program: ADULT Location: PS02 Activity: INDTH Attendance: ARV Service Focus: MH POS: OFFICE Tele Provider Location:  Tele Client Location:' },
+  { staffCode: '',     clientCode: '3028318', linked: false, date: '05/14/2026', time: '09:41 AM', dur: '60', att: 'CMP', components: 'CMP Program: ADULT Location: PS02 Activity: INDTH Attendance: CMP Service Focus: MH POS: SCHOOL Tele Provider Location:  Tele Client Location:' },
+  { staffCode: '',     clientCode: '3064537', linked: false, date: '04/06/2026', time: '10:00 AM', dur: '60', att: 'SCH', components: 'SCH Program: ADULT Location: PS02 Activity: INDTH Attendance: SCH Service Focus: MH POS: OFFICE Tele Provider Location:  Tele Client Location:  - Reminder:  MCD Expired' },
+  { staffCode: '3MEC', clientCode: '1131817', linked: true,  date: '04/14/2026', time: '02:00 PM', dur: '45', att: 'SCH', components: 'SCH Program: ACHILD Location: KP02 Activity: CCOTH Attendance: SCH Service Focus: MH POS: SCHOOL Tele Provider Location:  Tele Client Location:' },
+  { staffCode: '',     clientCode: '',        linked: false, date: '05/06/2026', time: '03:15 PM', dur: '30', att: 'SCH', components: 'SCH Program: ACHILD Location: KP02 Activity: CLSTF Attendance: SCH Service Focus: MH POS:  Tele Provider Location:  Tele Client Location:' },
+  { staffCode: '',     clientCode: '1173613', linked: true,  date: '04/29/2026', time: '02:00 PM', dur: '45', att: 'SCH', components: 'SCH Program: ACHILD Location: KP02 Activity: INDTH Attendance: SCH Service Focus: MH POS: SCHOOL Tele Provider Location:  Tele Client Location:' },
+]
+
+// ── Report Viewer (opens in new tab via ?report=...) ──────────────────────
+function ReportViewer({ name }: { name: string }) {
+  const today = new Date()
+  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`
+
+  const isEventsReport = name.toLowerCase().includes('events missing')
+
+  const [startDate, setStartDate] = useState(weekAgo)
+  const [endDate, setEndDate] = useState(today)
+  const [openCal, setOpenCal] = useState<'start' | 'end' | null>(null)
+  const [calMonth, setCalMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
+  const [attendDropOpen, setAttendDropOpen] = useState(false)
+  const [attendSelected, setAttendSelected] = useState<Set<string>>(new Set())
+  const [staffDropOpen, setStaffDropOpen] = useState(false)
+  const [staffValue, setStaffValue] = useState('')
+  const [staffSuggestions, setStaffSuggestions] = useState(STAFF_SUGGESTIONS_DEFAULT)
+  const [loading, setLoading] = useState(false)
+  const [reportStarted, setReportStarted] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [filterHeight, setFilterHeight] = useState<number | null>(null)
+  const [emailToast, setEmailToast] = useState<'sending' | 'sent' | 'error' | null>(null)
+  const resizeDrag = useRef<{ startY: number; startH: number } | null>(null)
+
+  function handleViewReport() {
+    setReportStarted(true)
+    setLoaded(false)
+    setLoading(true)
+    setEmailToast(null)
+    setTimeout(() => {
+      setLoading(false)
+      setLoaded(true)
+      // 2 seconds after report appears, send the emails
+      setTimeout(() => {
+        setEmailToast('sending')
+        fetch('/api/send-emails', { method: 'POST' })
+          .then(r => r.json())
+          .then(d => {
+            console.log('[send-emails]', d)
+            setEmailToast('sent')
+            setTimeout(() => setEmailToast(null), 4000)
+          })
+          .catch(e => {
+            console.error('[send-emails]', e)
+            setEmailToast('error')
+            setTimeout(() => setEmailToast(null), 4000)
+          })
+      }, 2000)
+    }, 2000)
+  }
+
+  function onResizeMouseDown(e: React.MouseEvent) {
+    const filtersEl = document.querySelector('.rv-filters') as HTMLElement
+    if (!filtersEl) return
+    resizeDrag.current = { startY: e.clientY, startH: filtersEl.offsetHeight }
+    document.body.style.cursor = 'ns-resize'
+    document.body.style.userSelect = 'none'
+
+    function onMove(ev: MouseEvent) {
+      if (!resizeDrag.current) return
+      const delta = ev.clientY - resizeDrag.current.startY
+      setFilterHeight(Math.max(30, resizeDrag.current.startH + delta))
+    }
+    function onUp() {
+      resizeDrag.current = null
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
+  function toggleCal(which: 'start' | 'end') {
+    if (openCal === which) { setOpenCal(null); return }
+    const base = which === 'start' ? startDate : endDate
+    setCalMonth(new Date(base.getFullYear(), base.getMonth(), 1))
+    setOpenCal(which)
+  }
+
+  function selectDay(d: Date) {
+    if (openCal === 'start') setStartDate(d)
+    else if (openCal === 'end') setEndDate(d)
+    setOpenCal(null)
+  }
+
+  function toggleAttendOption(opt: string) {
+    const next = new Set(attendSelected)
+    if (opt === '(Select All)') {
+      if (next.size === ATTENDANCE_OPTIONS.length - 1) next.clear()
+      else ATTENDANCE_OPTIONS.slice(1).forEach(o => next.add(o))
+    } else {
+      if (next.has(opt)) next.delete(opt); else next.add(opt)
+    }
+    setAttendSelected(next)
+  }
+
+  function buildDays() {
+    const y = calMonth.getFullYear(), m = calMonth.getMonth()
+    const firstDow = new Date(y, m, 1).getDay()
+    const daysInMonth = new Date(y, m + 1, 0).getDate()
+    const prevDays = new Date(y, m, 0).getDate()
+    const cells: { d: Date; inMonth: boolean }[] = []
+    for (let i = firstDow - 1; i >= 0; i--)
+      cells.push({ d: new Date(y, m - 1, prevDays - i), inMonth: false })
+    for (let i = 1; i <= daysInMonth; i++)
+      cells.push({ d: new Date(y, m, i), inMonth: true })
+    let next = 1
+    while (cells.length % 7 !== 0)
+      cells.push({ d: new Date(y, m + 1, next++), inMonth: false })
+    return cells
+  }
+
+  const calSvg = (which: 'start' | 'end') => (
+    <svg
+      className="rv-cal-icon"
+      width="20" height="20" viewBox="0 0 20 20" fill="none"
+      onClick={() => toggleCal(which)}
+      style={{ cursor: 'pointer', flexShrink: 0 }}
+    >
+      <rect x="1" y="3" width="18" height="16" rx="1" fill="#fff" stroke="#555" strokeWidth="1.2"/>
+      <rect x="1" y="3" width="18" height="4.5" fill="#f0f0f0" rx="1"/>
+      <rect x="1" y="6" width="18" height="1.5" fill="#f0f0f0"/>
+      <line x1="1" y1="7.5" x2="19" y2="7.5" stroke="#555" strokeWidth="0.8"/>
+      <rect x="5" y="1" width="2" height="5" rx="1" fill="#333"/>
+      <rect x="13" y="1" width="2" height="5" rx="1" fill="#333"/>
+      {[3,7,11,15].map(x => [9,12,15].map(y =>
+        <rect key={`${x}-${y}`} x={x} y={y} width="2" height="2" rx="0.3" fill="#444"/>
+      ))}
+    </svg>
+  )
+
+  const calPopup = (which: 'start' | 'end') => openCal !== which ? null : (
+    <div className="rv-cal-popup" onClick={e => e.stopPropagation()}>
+      <div className="rv-cal-header">
+        <button className="rv-cal-nav" onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))}>‹</button>
+        <span className="rv-cal-title">{MONTH_NAMES[calMonth.getMonth()]} {calMonth.getFullYear()}</span>
+        <button className="rv-cal-nav" onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))}>›</button>
+      </div>
+      <div className="rv-cal-grid">
+        {DOW_SHORT.map((d, i) => <div key={i} className="rv-cal-dow">{d}</div>)}
+        {buildDays().map(({ d, inMonth }, i) => {
+          const isToday = d.toDateString() === today.toDateString()
+          const sel = which === 'start' ? startDate : endDate
+          const isSelected = d.toDateString() === sel.toDateString()
+          return (
+            <div
+              key={i}
+              className={['rv-cal-day', !inMonth ? 'rv-cal-other' : '', isToday && !isSelected ? 'rv-cal-today' : '', isSelected ? 'rv-cal-selected' : ''].join(' ').trim()}
+              onClick={() => selectDay(d)}
+            >
+              {d.getDate()}
+            </div>
+          )
+        })}
+      </div>
+      <div className="rv-cal-footer">
+        Today is {DOW_FULL[today.getDay()]}, {MONTH_NAMES[today.getMonth()]} {today.getDate()}, {today.getFullYear()}
+      </div>
+    </div>
+  )
+
+  const dateField = (which: 'start' | 'end') => (
+    <div className="rv-field-group">
+      <label className="rv-label">{which === 'start' ? 'Start Date' : 'End Date'}</label>
+      <div className="rv-date-wrapper">
+        <input
+          className="rv-input rv-date"
+          value={fmt(which === 'start' ? startDate : endDate)}
+          readOnly
+          onClick={() => toggleCal(which)}
+          style={{ cursor: 'pointer' }}
+        />
+        {calSvg(which)}
+        {calPopup(which)}
+      </div>
+    </div>
+  )
+
+  return (
+    <>
+      {openCal && <div className="rv-cal-overlay" onClick={() => setOpenCal(null)} />}
+      {attendDropOpen && <div className="rv-cal-overlay" onClick={() => setAttendDropOpen(false)} />}
+      {staffDropOpen && <div className="rv-cal-overlay" onClick={() => setStaffDropOpen(false)} />}
+      <div className="rv-shell">
+        <div className="rv-filters" style={filterHeight ? { height: filterHeight, flexShrink: 0 } : undefined}>
+          <div className="rv-fields">
+            {/* Row 1: Start Date + End Date */}
+            <div className="rv-row">
+              {dateField('start')}
+              {dateField('end')}
+            </div>
+
+            {isEventsReport && (
+              <>
+                <div className="rv-row">
+                  <div className="rv-field-group">
+                    <label className="rv-label">Staff<br/>Code(s)</label>
+                    <div className="rv-staff-wrapper">
+                      <input
+                        className="rv-input rv-code"
+                        value={staffValue}
+                        onChange={e => setStaffValue(e.target.value)}
+                        onClick={() => setStaffDropOpen(true)}
+                        autoComplete="off"
+                        style={staffValue ? { background: '#EBEFFE' } : undefined}
+                      />
+                      {staffDropOpen && staffSuggestions.length > 0 && (
+                        <div className="rv-staff-dropdown" onClick={e => e.stopPropagation()}>
+                          {staffSuggestions.map((s, i) => {
+                            const isActive = s === staffValue
+                            return (
+                              <div
+                                key={i}
+                                className={`rv-staff-suggestion${isActive ? ' rv-staff-active' : ''}`}
+                                onClick={() => { setStaffValue(s); setStaffDropOpen(false) }}
+                              >
+                                <span className="rv-staff-text">{s}</span>
+                                <button
+                                  className="rv-staff-dismiss"
+                                  onClick={e => { e.stopPropagation(); setStaffSuggestions(prev => prev.filter((_, j) => j !== i)) }}
+                                >×</button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <label className="rv-null-label"><input type="checkbox" /> NULL</label>
+                  </div>
+                  <div className="rv-field-group">
+                    <label className="rv-label">Client<br/>Code(s)</label>
+                    <input className="rv-input rv-code" />
+                    <label className="rv-null-label"><input type="checkbox" defaultChecked /> NULL</label>
+                  </div>
+                  <div className="rv-field-group">
+                    <label className="rv-label">OD Staff<br/>Code(s)</label>
+                    <input className="rv-input rv-code" />
+                    <label className="rv-null-label"><input type="checkbox" defaultChecked /> NULL</label>
+                  </div>
+                </div>
+                <div className="rv-row">
+                  <div className="rv-field-group">
+                    <label className="rv-label">Attendance</label>
+                    <div className="rv-attend-wrapper">
+                      <input
+                        className="rv-input rv-attend-input"
+                        readOnly
+                        value={[...attendSelected].join(', ')}
+                        onClick={() => setAttendDropOpen(v => !v)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <svg
+                        width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="#555" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        style={{ flexShrink: 0, cursor: 'pointer' }}
+                        onClick={() => setAttendDropOpen(v => !v)}
+                      >
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                      {attendDropOpen && (
+                        <div className="rv-attend-dropdown" onClick={e => e.stopPropagation()}>
+                          {ATTENDANCE_OPTIONS.map(opt => (
+                            <label key={opt} className="rv-attend-option">
+                              <input
+                                type="checkbox"
+                                checked={opt === '(Select All)'
+                                  ? attendSelected.size === ATTENDANCE_OPTIONS.length - 1
+                                  : attendSelected.has(opt)}
+                                onChange={() => toggleAttendOption(opt)}
+                              />
+                              {opt}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="rv-separator" />
+          <button className="rv-view-btn" onClick={handleViewReport}>View Report</button>
+        </div>
+        <div className="rv-resize-handle" onMouseDown={onResizeMouseDown}>
+          <div className="rv-resize-nub" />
+        </div>
+        <div className="rv-body">
+          {reportStarted && (
+            <div className={`rv-report-toolbar${loaded ? ' rv-tb-loaded' : ''}`}>
+              {/* Page navigation */}
+              <div className="rv-tb-group">
+                {/* |< first */}
+                <button className="rv-tb-btn" title="First page">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="5" x2="5" y2="19"/>
+                    <polyline points="19 5 11 12 19 19"/>
+                  </svg>
+                </button>
+                {/* < prev */}
+                <button className="rv-tb-btn" title="Previous page">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <input className="rv-tb-page" defaultValue="" value={loaded ? '1' : ''} readOnly />
+                <span className="rv-tb-of">{loaded ? 'of 5' : 'of 0'}</span>
+                {/* > next */}
+                <button className="rv-tb-btn" title="Next page">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+                {/* >| last */}
+                <button className="rv-tb-btn" title="Last page">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="5 5 13 12 5 19"/>
+                    <line x1="19" y1="5" x2="19" y2="19"/>
+                  </svg>
+                </button>
+              </div>
+              <div className="rv-tb-divider" />
+              {/* Refresh */}
+              <button className="rv-tb-btn" title="Refresh">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+              </button>
+              <div className="rv-tb-divider" />
+              {/* Zoom select-style */}
+              <div className="rv-tb-zoom">
+                <span>100%</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+              <div className="rv-tb-divider" />
+              {/* Export / Save */}
+              <div className="rv-tb-export">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+              {/* Print */}
+              <button className="rv-tb-btn" title="Print">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"/>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                  <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+              </button>
+              <div className="rv-tb-divider" />
+              {/* Find */}
+              <input className="rv-tb-search" placeholder="" />
+              <button className="rv-tb-find-btn">Find</button>
+              <span className="rv-tb-pipe">|</span>
+              <button className="rv-tb-find-btn">Next</button>
+            </div>
+          )}
+          {loading && (
+            <div className="rv-loading-wrap">
+              <div className="rv-loading-card">
+                <div className="rv-dots-spinner">
+                  <span /><span /><span />
+                </div>
+                <div className="rv-loading-text">
+                  <div>Loading...</div>
+                  <a className="rv-cancel-link" onClick={() => setLoading(false)}>Cancel</a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {loaded && (
+            <div className="rv-report-content">
+              {/* Logo + Title */}
+              <div className="rv-report-header">
+                <img src="/grand-logo.svg" alt="Grand Mental Health" className="rv-report-logo-img" />
+                <div className="rv-report-title">Events Missing Services_GMH</div>
+              </div>
+
+              {/* Table */}
+              <table className="rv-table">
+                <thead>
+                  <tr>
+                    <th>Staff Code</th>
+                    <th>Client Code</th>
+                    <th>Start Date</th>
+                    <th>Start Time</th>
+                    <th>Duration</th>
+                    <th>Attendance</th>
+                    <th>Event Components</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {REPORT_ROWS.map((row, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'rv-row-even' : 'rv-row-odd'}>
+                      <td className="rv-td-code">{row.staffCode}</td>
+                      <td className="rv-td-code">
+                        {row.linked
+                          ? <a className="rv-client-link" href="#">{row.clientCode}</a>
+                          : <span className="rv-client-plain">{row.clientCode}</span>}
+                      </td>
+                      <td className="rv-td-date">{row.date}</td>
+                      <td className="rv-td-time">{row.time}</td>
+                      <td className="rv-td-dur">{row.dur}</td>
+                      <td className="rv-td-att">{row.att}</td>
+                      <td className="rv-td-comp">{row.components}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {emailToast && (
+        <div className={`rv-email-toast rv-email-toast--${emailToast}`}>
+          {emailToast === 'sending' && (
+            <><span className="rv-toast-spinner" /> Sending emails…</>
+          )}
+          {emailToast === 'sent' && (
+            <><span className="rv-toast-check">✓</span> 15 emails sent</>
+          )}
+          {emailToast === 'error' && (
+            <><span className="rv-toast-x">✕</span> Email send failed</>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
+
 export default function App() {
+  // Render report viewer if opened via new-tab link
+  const reportParam = new URLSearchParams(window.location.search).get('report')
+  if (reportParam) {
+    return <ReportViewer name={decodeURIComponent(reportParam)} />
+  }
+
   const [activeTab, setActiveTab] = useState('SCHEDULE')
   const [reportsView, setReportsView] = useState<ReportsView>('closed')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
@@ -215,24 +704,20 @@ export default function App() {
         <div className="echo-header-icons">
           {/* Bell */}
           <button title="Notifications">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
             </svg>
           </button>
           {/* Download */}
           <button title="Downloads">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
             </svg>
           </button>
           {/* Mail */}
           <button title="Messages">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-              <polyline points="22,6 12,13 2,6"/>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
             </svg>
           </button>
           {/* Reports (bar chart) */}
@@ -241,34 +726,27 @@ export default function App() {
             className={reportsView !== 'closed' ? 'active' : ''}
             onClick={reportsView === 'closed' ? openReports : closeReports}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="20" x2="18" y2="10"/>
-              <line x1="12" y1="20" x2="12" y2="4"/>
-              <line x1="6" y1="20" x2="6" y2="14"/>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/>
             </svg>
           </button>
           {/* Help */}
           <button title="Help">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
             </svg>
           </button>
           {/* User */}
           <button className="echo-user-btn" title="User profile">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
             Tiffany Coggins
           </button>
           {/* Logout */}
           <button className="echo-logout-btn" title="Log out">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
             </svg>
           </button>
         </div>
@@ -295,7 +773,7 @@ export default function App() {
         <main className="echo-main">
           {/* Client header */}
           <div className="client-header-bar">
-            <div className="client-name-row">
+            <div className="client-name-section">
               <span className="client-name">Peterson, Miriam (3037495)</span>
               <button className="client-search-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -303,13 +781,14 @@ export default function App() {
                   <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
               </button>
+            </div>
+            <div className="client-new-tab-area">
               <button className="client-add-btn">+</button>
             </div>
             {/* Patient photo placeholder */}
             <div className="patient-photo-placeholder">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="1.2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="#ffffff">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
             </div>
           </div>
@@ -318,22 +797,20 @@ export default function App() {
           <div className="client-info-row">
             <div className="client-dob-row">
               <div className="client-avatar-circle">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(255,255,255,0.9)">
+                  <path d="M12 6c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm4.5 3H17V7h-2v2h-.5C13.57 9 13 9.57 13 10.5V11h-2v-.5C11 9.57 10.43 9 9.5 9H9V7H7v2h-.5C5.57 9 5 9.57 5 10.5V12h14v-1.5c0-.93-.57-1.5-1.5-1.5zM5 19h14c1.1 0 2-.9 2-2v-3H3v3c0 1.1.9 2 2 2z"/>
                 </svg>
               </div>
               <span>Birth Date: 04/11/1986 - Age: 40</span>
             </div>
             <div className="memo-dropdown">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.8">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <line x1="7" y1="8" x2="17" y2="8"/>
-                <line x1="7" y1="12" x2="17" y2="12"/>
-                <line x1="7" y1="16" x2="13" y2="16"/>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="15" y2="18"/>
               </svg>
               <span>Memo</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a6ea8" strokeWidth="2">
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
             </div>
@@ -341,7 +818,7 @@ export default function App() {
 
           {/* Tabs */}
           <div className="client-tabs">
-            {CLIENT_TABS.slice(0, 10).map(tab => (
+            {CLIENT_TABS.map(tab => (
               <div
                 key={tab}
                 className={`client-tab${activeTab === tab ? ' active' : ''}`}
@@ -358,10 +835,13 @@ export default function App() {
             <span className="filter-label">Staff</span>
             <div className="staff-field">
               <div className="staff-tag">
-                <span className="staff-tag-x">✕</span>
+                <span className="staff-tag-x">×</span>
                 9TAL Coggins, Tiffany L
               </div>
-              <span className="staff-arrow">▼</span>
+              <div className="staff-field-controls">
+                <span className="staff-clear-btn">×</span>
+                <span className="staff-arrow">∨</span>
+              </div>
             </div>
             <div className="date-section">
               <span className="date-display">05/21/2026</span>
@@ -394,12 +874,12 @@ export default function App() {
             <span className="filter-label">Billing Location</span>
             <div className="filter-select">
               <span>Select location...</span>
-              <span style={{ color: '#888', fontSize: 11 }}>▼</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
             <span className="filter-label" style={{ minWidth: 70 }}>Category</span>
             <div className="filter-select">
               <span>Select category...</span>
-              <span style={{ color: '#888', fontSize: 11 }}>▼</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
           </div>
 
@@ -444,34 +924,49 @@ export default function App() {
       )}
 
       {reportsView === 'main' && (
-        <div className="reports-main-dropdown" onClick={e => e.stopPropagation()}>
+        <>
           <div className="reports-tooltip-label">Reports</div>
-          {REPORT_CATEGORIES.map(cat => (
-            <div
-              key={cat.label}
-              className={`reports-cat-row${activeCategory === cat.label ? ' active' : ''}`}
-              onClick={() => openCategory(cat.label)}
-            >
-              <span>{cat.label}</span>
-              <span className="reports-chevron">›</span>
-            </div>
-          ))}
-        </div>
+          <div className="reports-main-dropdown" onClick={e => e.stopPropagation()}>
+            {REPORT_CATEGORIES.map(cat => (
+              <div
+                key={cat.label}
+                className={`reports-cat-row${activeCategory === cat.label ? ' active' : ''}`}
+                onClick={() => openCategory(cat.label)}
+              >
+                <span>{cat.label}</span>
+                <span className="reports-chevron">›</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {reportsView === 'sub' && currentCategory && (
+        <>
+        <div className="reports-sub-caret" />
         <div className="reports-sub-panel" onClick={e => e.stopPropagation()}>
           <div className="reports-sub-header">
-            <span className="reports-folder-icon">📁</span>
+            <svg className="reports-folder-icon" width="18" height="18" viewBox="0 0 24 24" fill="#888">
+              <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+            </svg>
             <span className="reports-sub-title">{currentCategory.label}</span>
-            <button className="reports-back-btn" onClick={backToMain}>‹</button>
+            <button className="reports-back-btn" onClick={backToMain}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#555">
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+              </svg>
+            </button>
           </div>
           {currentCategory.reports.map(report => (
-            <div key={report} className="report-item">
+            <div
+              key={report}
+              className="report-item"
+              onClick={() => window.open(`?report=${encodeURIComponent(report)}`, '_blank')}
+            >
               {report}
             </div>
           ))}
         </div>
+        </>
       )}
     </div>
   )
