@@ -1,0 +1,12 @@
+{
+  "name": "grand-tss-demo",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/send-emails.py": {
+      "runtime": "python3.12",
+      "maxDuration": 60
+    }
+  }
+}
