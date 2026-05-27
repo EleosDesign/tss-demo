@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, type JSX } from 'react'
 import './App.css'
 
 const ICON_BLUE = '#5ab8e8'
