@@ -382,6 +382,7 @@ function ReportViewer({ name }: { name: string }) {
         .then(d => {
           console.log('[send-emails]', d)
           setEmailToast('sent')
+          window.open('https://mail.google.com/#search/Events+Missing+Services', '_blank')
         })
         .catch(e => {
           console.error('[send-emails]', e)
