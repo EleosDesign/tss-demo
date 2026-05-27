@@ -1312,6 +1312,10 @@
 .report-item:last-child {
   border-bottom: none;
 }
+.report-item--demo-hover {
+  background: #deeaf5;
+  text-decoration: underline;
+}
 
 /* ── Email toast ── */
 .rv-email-toast {

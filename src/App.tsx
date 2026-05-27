@@ -746,7 +746,11 @@ export default function App() {
       const evtR = evtEl.getBoundingClientRect()
       const evtItem = { x: evtR.left + evtR.width / 2, y: evtR.top + evtR.height / 2 }
       setDemoCursor(c => ({ ...c, x: evtItem.x, y: evtItem.y }))
-      await t(700)
+      await t(700) // cursor travels to item
+      // Hover: highlight the row so user can see what's selected
+      evtEl.classList.add('report-item--demo-hover')
+      await t(1100) // pause so user can read the label
+      evtEl.classList.remove('report-item--demo-hover')
       setDemoCursor(c => ({ ...c, clicking: true }))
       await t(220)
       setDemoCursor(c => ({ ...c, clicking: false }))
