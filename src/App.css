@@ -1343,6 +1343,7 @@
   align-items: center;
   gap: 7px;
   margin-bottom: 18px;
+  padding-right: 28px; /* leave room for absolute close button */
 }
 
 .rv-toast-brand {
