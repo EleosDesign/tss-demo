@@ -1322,107 +1322,119 @@
   position: fixed;
   bottom: 32px;
   right: 32px;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 18px 20px 18px 18px;
-  border-radius: 14px;
-  background: #fff;
-  color: #111;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
-  border: 1px solid rgba(0,0,0,0.07);
-  min-width: 300px;
-  max-width: 340px;
-  animation: rv-toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 230px;
+  background: linear-gradient(160deg, #14112b 0%, #0d0d1a 100%);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 20px;
+  padding: 18px 20px 16px;
+  color: #fff;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+  animation: rv-toast-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 9999;
 }
 
 @keyframes rv-toast-in {
-  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  from { opacity: 0; transform: translateY(20px) scale(0.93); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.rv-toast-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #fdf6e3 0%, #fff3cc 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.rv-toast-body {
-  flex: 1;
-  min-width: 0;
-  padding-top: 1px;
-}
-
-.rv-toast-title {
-  font-size: 14px;
-  font-weight: 650;
-  color: #111;
+.rv-toast-header {
   display: flex;
   align-items: center;
   gap: 7px;
+  margin-bottom: 18px;
+}
+
+.rv-toast-brand {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  flex: 1;
+  letter-spacing: 0.02em;
+}
+
+.rv-toast-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rv-toast-dot--sending {
+  background: #22c55e;
+  animation: rv-dot-pulse 1.4s infinite;
+}
+.rv-toast-dot--sent { background: #22c55e; }
+.rv-toast-dot--error { background: #ef4444; }
+
+@keyframes rv-dot-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+  70%  { box-shadow: 0 0 0 7px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+.rv-toast-counter {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
   margin-bottom: 3px;
 }
 
-.rv-toast-badge {
-  background: #863bff;
+.rv-toast-count {
+  font-size: 58px;
+  font-weight: 800;
+  line-height: 1;
   color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 1px 7px;
-  border-radius: 20px;
-  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -2px;
 }
 
-.rv-toast-sub {
+.rv-toast-total {
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: -0.5px;
+}
+
+.rv-toast-label {
   font-size: 12px;
-  color: #666;
+  color: rgba(255,255,255,0.42);
+  margin-bottom: 14px;
+  letter-spacing: 0.01em;
+}
+
+.rv-toast-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+  margin-bottom: 11px;
+}
+
+.rv-toast-status {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
   line-height: 1.4;
 }
-
-.rv-toast-progress {
-  margin-top: 10px;
-  height: 3px;
-  border-radius: 2px;
-  background: #ede8ff;
-  overflow: hidden;
-}
-
-.rv-toast-progress-bar {
-  height: 100%;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #863bff, #b07fff);
-  animation: rv-progress 14s linear forwards;
-}
-
-@keyframes rv-progress {
-  from { width: 0%; }
-  to   { width: 95%; }
-}
+.rv-email-toast--sent .rv-toast-status  { color: #4ade80; }
+.rv-email-toast--error .rv-toast-status { color: #f87171; }
 
 .rv-toast-close {
-  background: none;
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
   border: none;
   cursor: pointer;
-  color: #aaa;
-  font-size: 13px;
-  padding: 0;
-  line-height: 1;
+  color: rgba(255,255,255,0.55);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
-  margin-top: 2px;
-  transition: color 0.15s;
 }
-.rv-toast-close:hover { color: #555; }
-
-.rv-email-toast--error .rv-toast-icon {
-  background: linear-gradient(135deg, #fff0f0 0%, #ffd8d8 100%);
-}
-.rv-email-toast--error .rv-toast-title { color: #c0392b; }
+.rv-toast-close:hover { background: rgba(255,255,255,0.2); color: #fff; }
 
 /* ── Agent demo cursor ── */
 .patient-photo-demo-trigger {
@@ -1438,8 +1450,8 @@
   z-index: 99999;
   pointer-events: none;
   transform: translate(-4px, -4px);
-  transition: left 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-              top  0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              top  0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .demo-cursor-arrow {
