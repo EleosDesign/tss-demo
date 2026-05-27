@@ -338,6 +338,8 @@ function ReportViewer({ name }: { name: string }) {
           return null
         })()
         if (!label) continue
+        label.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        await t(250)
         await moveCursorTo(posOf(label), 480)
         await doClick()
         const cb = label.querySelector('input[type="checkbox"]') as HTMLElement
@@ -373,22 +375,18 @@ function ReportViewer({ name }: { name: string }) {
     setTimeout(() => {
       setLoading(false)
       setLoaded(true)
-      // 2 seconds after report appears, send the emails
-      setTimeout(() => {
-        setEmailToast('sending')
-        fetch('/api/send-emails', { method: 'POST' })
-          .then(r => r.json())
-          .then(d => {
-            console.log('[send-emails]', d)
-            setEmailToast('sent')
-            setTimeout(() => setEmailToast(null), 4000)
-          })
-          .catch(e => {
-            console.error('[send-emails]', e)
-            setEmailToast('error')
-            setTimeout(() => setEmailToast(null), 4000)
-          })
-      }, 2000)
+      // send emails immediately after report appears
+      setEmailToast('sending')
+      fetch('/api/send-emails', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+          console.log('[send-emails]', d)
+          setEmailToast('sent')
+        })
+        .catch(e => {
+          console.error('[send-emails]', e)
+          setEmailToast('error')
+        })
     }, 2000)
   }
 
