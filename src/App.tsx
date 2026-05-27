@@ -678,6 +678,84 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('SCHEDULE')
   const [reportsView, setReportsView] = useState<ReportsView>('closed')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [demoCursor, setDemoCursor] = useState<{ x: number; y: number; visible: boolean; clicking: boolean }>({
+    x: 0, y: 0, visible: false, clicking: false,
+  })
+
+  function getCenterOf(selector: string): { x: number; y: number } | null {
+    const el = document.querySelector(selector)
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+  }
+
+  function runAgentDemo() {
+    const t = (ms: number) => new Promise<void>(res => setTimeout(res, ms))
+
+    async function go() {
+      // Snap cursor to avatar starting position
+      const avatar = getCenterOf('.patient-photo-placeholder')
+      if (!avatar) return
+      setDemoCursor({ x: avatar.x, y: avatar.y, visible: true, clicking: false })
+
+      await t(300)
+
+      // ── Step 1: move to Reports icon ──
+      const rep = getCenterOf('[title="Reports"]')
+      if (!rep) return
+      setDemoCursor(c => ({ ...c, x: rep.x, y: rep.y }))
+      await t(700)
+      setDemoCursor(c => ({ ...c, clicking: true }))
+      await t(220)
+      setDemoCursor(c => ({ ...c, clicking: false }))
+      openReports()
+      await t(700)
+
+      // ── Step 2: move to Administration row ──
+      const admin = (() => {
+        const rows = document.querySelectorAll('.reports-cat-row')
+        for (const row of rows) {
+          if (row.textContent?.includes('Administration')) {
+            const r = row.getBoundingClientRect()
+            return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+          }
+        }
+        return null
+      })()
+      if (!admin) return
+      setDemoCursor(c => ({ ...c, x: admin.x, y: admin.y }))
+      await t(700)
+      setDemoCursor(c => ({ ...c, clicking: true }))
+      await t(220)
+      setDemoCursor(c => ({ ...c, clicking: false }))
+      openCategory('Administration')
+      await t(700)
+
+      // ── Step 3: move to Events Missing Services, GMH ──
+      const evtItem = (() => {
+        const items = document.querySelectorAll('.report-item')
+        for (const item of items) {
+          if (item.textContent?.includes('Events Missing Services')) {
+            const r = item.getBoundingClientRect()
+            return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+          }
+        }
+        return null
+      })()
+      if (!evtItem) return
+      setDemoCursor(c => ({ ...c, x: evtItem.x, y: evtItem.y }))
+      await t(700)
+      setDemoCursor(c => ({ ...c, clicking: true }))
+      await t(220)
+      setDemoCursor(c => ({ ...c, clicking: false }))
+      window.open(`?report=${encodeURIComponent('Events Missing Services, GMH')}`, '_blank')
+      await t(600)
+
+      setDemoCursor(c => ({ ...c, visible: false }))
+    }
+
+    go()
+  }
 
   function openReports() {
     setReportsView('main')
@@ -805,7 +883,7 @@ export default function App() {
               <button className="client-add-btn">+</button>
             </div>
             {/* Patient photo placeholder */}
-            <div className="patient-photo-placeholder">
+            <div className="patient-photo-placeholder patient-photo-demo-trigger" onClick={runAgentDemo} title="Run demo">
               <svg width="34" height="34" viewBox="0 0 24 24" fill="#ffffff">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
@@ -986,6 +1064,20 @@ export default function App() {
           ))}
         </div>
         </>
+      )}
+
+      {/* ── Agent demo cursor ── */}
+      {demoCursor.visible && (
+        <div
+          className={`demo-cursor${demoCursor.clicking ? ' demo-cursor--click' : ''}`}
+          style={{ left: demoCursor.x, top: demoCursor.y }}
+        >
+          <div className="demo-cursor-ring" />
+          <svg className="demo-cursor-arrow" width="22" height="26" viewBox="0 0 22 26" fill="none">
+            <path d="M2 2L2 20L6.5 15L9.5 22.5L12.5 21.5L9.5 14H17L2 2Z"
+              fill="white" stroke="#1a1a1a" strokeWidth="1.5" strokeLinejoin="round"/>
+          </svg>
+        </div>
       )}
     </div>
   )
