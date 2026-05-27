@@ -1,4 +1,4 @@
-import { useState, useRef, type JSX } from 'react'
+import { useState, useRef, useEffect, type JSX } from 'react'
 import './App.css'
 
 const ICON_BLUE = '#5ab8e8'
@@ -228,7 +228,142 @@ function ReportViewer({ name }: { name: string }) {
   const [loaded, setLoaded] = useState(false)
   const [filterHeight, setFilterHeight] = useState<number | null>(null)
   const [emailToast, setEmailToast] = useState<'sending' | 'sent' | 'error' | null>(null)
+  const [rvDemoCursor, setRvDemoCursor] = useState<{ x: number; y: number; visible: boolean; clicking: boolean }>({
+    x: 0, y: 0, visible: false, clicking: false,
+  })
   const resizeDrag = useRef<{ startY: number; startH: number } | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('demo') === '1') {
+      const timer = setTimeout(() => runReportViewerDemo(), 900)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  function runReportViewerDemo() {
+    const t = (ms: number) => new Promise<void>(res => setTimeout(res, ms))
+
+    function posOf(el: Element): { x: number; y: number } {
+      const r = el.getBoundingClientRect()
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+    }
+
+    async function moveCursorTo(pos: { x: number; y: number }, travel = 620) {
+      setRvDemoCursor(c => ({ ...c, x: pos.x, y: pos.y }))
+      await t(travel)
+    }
+
+    async function doClick() {
+      setRvDemoCursor(c => ({ ...c, clicking: true }))
+      await t(180)
+      setRvDemoCursor(c => ({ ...c, clicking: false }))
+      await t(100)
+    }
+
+    async function go() {
+      setRvDemoCursor({ x: window.innerWidth / 2, y: 100, visible: true, clicking: false })
+      await t(400)
+
+      // ── Step 1: Start date → January 1 ──
+      const startInput = document.querySelector('input.rv-date') as HTMLElement
+      if (!startInput) return
+      await moveCursorTo(posOf(startInput))
+      await doClick()
+      startInput.click()
+      await t(350)
+
+      // Navigate back 4 months (May → Jan) — cursor stays on prev button
+      const prevBtn = () => document.querySelector('button.rv-cal-nav') as HTMLElement
+      await moveCursorTo(posOf(prevBtn()))
+      for (let i = 0; i < 4; i++) {
+        await doClick()
+        prevBtn()?.click()
+        await t(280)
+      }
+
+      // Click January 1
+      await t(200)
+      const jan1 = (() => {
+        for (const cell of document.querySelectorAll('.rv-cal-day')) {
+          if (!cell.classList.contains('rv-cal-other') && cell.textContent?.trim() === '1')
+            return cell as HTMLElement
+        }
+        return null
+      })()
+      if (!jan1) return
+      await moveCursorTo(posOf(jan1))
+      await doClick()
+      jan1.click()
+      await t(450) // calendar closes
+
+      // ── Step 2: Staff codes ──
+      const staffInput = document.querySelectorAll('input.rv-input.rv-code')[0] as HTMLElement
+      if (!staffInput) return
+      await moveCursorTo(posOf(staffInput))
+      await doClick()
+      staffInput.click()
+      await t(350)
+
+      const staffSug = (() => {
+        for (const el of document.querySelectorAll('.rv-staff-suggestion')) {
+          if (el.textContent?.includes('3XCS, 4YFR, 3CZD')) return el as HTMLElement
+        }
+        return null
+      })()
+      if (!staffSug) return
+      staffSug.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      await t(300)
+      await moveCursorTo(posOf(staffSug))
+      staffSug.classList.add('rv-staff-demo-hover')
+      await t(900)
+      staffSug.classList.remove('rv-staff-demo-hover')
+      await doClick()
+      staffSug.click()
+      await t(350)
+
+      // ── Step 3: Attendance ──
+      const attendInput = document.querySelector('input.rv-attend-input') as HTMLElement
+      if (!attendInput) return
+      await moveCursorTo(posOf(attendInput))
+      await doClick()
+      attendInput.click()
+      await t(350)
+
+      for (const optText of ['ARV', 'CMP', 'SCH']) {
+        const label = (() => {
+          for (const el of document.querySelectorAll('label.rv-attend-option')) {
+            if (el.textContent?.trim() === optText) return el as HTMLElement
+          }
+          return null
+        })()
+        if (!label) continue
+        await moveCursorTo(posOf(label), 480)
+        await doClick()
+        const cb = label.querySelector('input[type="checkbox"]') as HTMLElement
+        cb?.click()
+        await t(280)
+      }
+
+      // Close attendance dropdown
+      const overlay = document.querySelector('.rv-cal-overlay') as HTMLElement
+      overlay?.click()
+      await t(350)
+
+      // ── Step 4: View Report ──
+      const viewBtn = document.querySelector('.rv-view-btn') as HTMLElement
+      if (!viewBtn) return
+      await moveCursorTo(posOf(viewBtn))
+      await t(200) // brief hover
+      await doClick()
+      viewBtn.click()
+      await t(500)
+
+      setRvDemoCursor(c => ({ ...c, visible: false }))
+    }
+
+    go()
+  }
 
   function handleViewReport() {
     setReportStarted(true)
@@ -664,6 +799,17 @@ function ReportViewer({ name }: { name: string }) {
           )}
         </div>
       )}
+      {rvDemoCursor.visible && (
+        <div
+          className={`demo-cursor${rvDemoCursor.clicking ? ' demo-cursor--click' : ''}`}
+          style={{ left: rvDemoCursor.x, top: rvDemoCursor.y }}
+        >
+          <svg className="demo-cursor-arrow" width="22" height="26" viewBox="0 0 22 26" fill="none">
+            <path d="M2 2L2 20L6.5 15L9.5 22.5L12.5 21.5L9.5 14H17L2 2Z"
+              fill="white" stroke="#1a1a1a" strokeWidth="1.5" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      )}
     </>
   )
 }
@@ -754,7 +900,7 @@ export default function App() {
       setDemoCursor(c => ({ ...c, clicking: true }))
       await t(220)
       setDemoCursor(c => ({ ...c, clicking: false }))
-      window.open(`?report=${encodeURIComponent('Events Missing Services, GMH')}`, '_blank')
+      window.open(`?report=${encodeURIComponent('Events Missing Services, GMH')}&demo=1`, '_blank')
       await t(600)
 
       setDemoCursor(c => ({ ...c, visible: false }))

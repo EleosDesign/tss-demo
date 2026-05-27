@@ -1452,3 +1452,7 @@
   transform: scale(0.82);
   transition: transform 0.1s ease;
 }
+
+.rv-staff-demo-hover {
+  background: #eef2ff !important;
+}
