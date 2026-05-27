@@ -634,14 +634,33 @@ function ReportViewer({ name }: { name: string }) {
 
       {emailToast && (
         <div className={`rv-email-toast rv-email-toast--${emailToast}`}>
-          {emailToast === 'sending' && (
-            <><span className="rv-toast-spinner" /> Sending emails…</>
-          )}
-          {emailToast === 'sent' && (
-            <><span className="rv-toast-check">✓</span> 15 emails sent</>
-          )}
-          {emailToast === 'error' && (
-            <><span className="rv-toast-x">✕</span> Email send failed</>
+          {/* Eleos icon */}
+          <div className="rv-toast-icon">
+            <img src="/eleos-icon.svg" alt="Eleos" width="24" height="24" />
+          </div>
+          <div className="rv-toast-body">
+            {emailToast === 'sending' && (
+              <>
+                <div className="rv-toast-title">Sending notifications</div>
+                <div className="rv-toast-sub">Emailing 15 clinicians via Eleos…</div>
+                <div className="rv-toast-progress"><div className="rv-toast-progress-bar" /></div>
+              </>
+            )}
+            {emailToast === 'sent' && (
+              <>
+                <div className="rv-toast-title">Notifications sent <span className="rv-toast-badge">15</span></div>
+                <div className="rv-toast-sub">All clinicians notified successfully</div>
+              </>
+            )}
+            {emailToast === 'error' && (
+              <>
+                <div className="rv-toast-title">Send failed</div>
+                <div className="rv-toast-sub">Could not reach email service</div>
+              </>
+            )}
+          </div>
+          {emailToast !== 'sending' && (
+            <button className="rv-toast-close" onClick={() => setEmailToast(null)}>✕</button>
           )}
         </div>
       )}
@@ -741,7 +760,7 @@ export default function App() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
-            Tiffany Coggins
+            Jamie Torres
           </button>
           {/* Logout */}
           <button className="echo-logout-btn" title="Log out">
@@ -774,7 +793,7 @@ export default function App() {
           {/* Client header */}
           <div className="client-header-bar">
             <div className="client-name-section">
-              <span className="client-name">Peterson, Miriam (3037495)</span>
+              <span className="client-name">Rivera, Carmen (3037495)</span>
               <button className="client-search-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="8"/>
@@ -836,7 +855,7 @@ export default function App() {
             <div className="staff-field">
               <div className="staff-tag">
                 <span className="staff-tag-x">×</span>
-                9TAL Coggins, Tiffany L
+                9TAL Torres, Jamie L
               </div>
               <div className="staff-field-controls">
                 <span className="staff-clear-btn">×</span>
@@ -902,8 +921,8 @@ export default function App() {
           <div className="schedule-grid">
             <div className="schedule-grid-header">
               <div className="grid-col-spacer" />
-              <div className="grid-col-header">3037495 Peterson, Miriam (04/11/1986)</div>
-              <div className="grid-col-header">9TAL Coggins, Tiffany L.</div>
+              <div className="grid-col-header">3037495 Rivera, Carmen (04/11/1986)</div>
+              <div className="grid-col-header">9TAL Torres, Jamie L.</div>
             </div>
             <div className="schedule-grid-body">
               {TIME_SLOTS.map(t => (
