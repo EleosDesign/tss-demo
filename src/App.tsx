@@ -380,7 +380,7 @@ function ReportViewer({ name }: { name: string }) {
       // send emails immediately after report appears
       setToastCount(1)
       setEmailToast('sending')
-      // Counter always runs 1→15 at 200ms/tick (~2.8 s).
+      // Counter always runs 1→15 at 110ms/tick (~1.5 s).
       // "sent" state fires only after BOTH api AND animation finish.
       let apiResult: 'sent' | 'error' | null = null
       let n = 1
@@ -398,7 +398,7 @@ function ReportViewer({ name }: { name: string }) {
             setEmailToast('error')
           }
         }
-      }, 200)
+      }, 110)
       fetch('/api/send-emails', { method: 'POST' })
         .then(r => r.json())
         .then(d => {
@@ -866,18 +866,18 @@ export default function App() {
       if (!avatar) return
       setDemoCursor({ x: avatar.x, y: avatar.y, visible: true, clicking: false })
 
-      await t(100)
+      await t(80)
 
       // ── Step 1: move to Reports icon ──
       const rep = getCenterOf('[title="Reports"]')
       if (!rep) return
       setDemoCursor(c => ({ ...c, x: rep.x, y: rep.y }))
-      await t(220)
+      await t(160)
       setDemoCursor(c => ({ ...c, clicking: true }))
-      await t(90)
+      await t(70)
       setDemoCursor(c => ({ ...c, clicking: false }))
       openReports()
-      await t(220)
+      await t(160)
 
       // ── Step 2: move to Administration row ──
       const admin = (() => {
@@ -892,12 +892,12 @@ export default function App() {
       })()
       if (!admin) return
       setDemoCursor(c => ({ ...c, x: admin.x, y: admin.y }))
-      await t(220)
+      await t(160)
       setDemoCursor(c => ({ ...c, clicking: true }))
-      await t(90)
+      await t(70)
       setDemoCursor(c => ({ ...c, clicking: false }))
       openCategory('Administration')
-      await t(220)
+      await t(160)
 
       // ── Step 3: scroll sub-panel so item is visible, then move cursor ──
       const evtEl = (() => {
@@ -910,20 +910,20 @@ export default function App() {
       if (!evtEl) return
       // Scroll the item into view inside the sub-panel
       evtEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
-      await t(220) // wait for scroll to settle
+      await t(160) // wait for scroll to settle
       const evtR = evtEl.getBoundingClientRect()
       const evtItem = { x: evtR.left + evtR.width / 2, y: evtR.top + evtR.height / 2 }
       setDemoCursor(c => ({ ...c, x: evtItem.x, y: evtItem.y }))
-      await t(220) // cursor travels to item
+      await t(160) // cursor travels to item
       // Hover: highlight the row so user can see what's selected
       evtEl.classList.add('report-item--demo-hover')
-      await t(600) // pause so user can read the label
+      await t(500) // pause so user can read the label
       evtEl.classList.remove('report-item--demo-hover')
       setDemoCursor(c => ({ ...c, clicking: true }))
-      await t(90)
+      await t(70)
       setDemoCursor(c => ({ ...c, clicking: false }))
       window.open(`?report=${encodeURIComponent('Events Missing Services, GMH')}&demo=1`, '_blank')
-      await t(180)
+      await t(140)
 
       setDemoCursor(c => ({ ...c, visible: false }))
     }
