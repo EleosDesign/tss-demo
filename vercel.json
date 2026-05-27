@@ -1,7 +1,6 @@
 {
   "buildCommand": "npm ci && npm run build",
   "outputDirectory": "dist",
-  "nodeVersion": "22.x",
   "functions": {
     "api/send-emails.py": {
       "maxDuration": 60
