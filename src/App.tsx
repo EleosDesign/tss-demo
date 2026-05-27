@@ -877,7 +877,7 @@ export default function App() {
       await t(70)
       setDemoCursor(c => ({ ...c, clicking: false }))
       openReports()
-      await t(160)
+      await t(350) // wait for panel to finish animating in before querying positions
 
       // ── Step 2: move to Administration row ──
       const admin = (() => {
@@ -897,7 +897,7 @@ export default function App() {
       await t(70)
       setDemoCursor(c => ({ ...c, clicking: false }))
       openCategory('Administration')
-      await t(160)
+      await t(350) // wait for sub-panel to finish animating in
 
       // ── Step 3: scroll sub-panel so item is visible, then move cursor ──
       const evtEl = (() => {
@@ -910,7 +910,7 @@ export default function App() {
       if (!evtEl) return
       // Scroll the item into view inside the sub-panel
       evtEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
-      await t(160) // wait for scroll to settle
+      await t(280) // wait for smooth scroll to settle
       const evtR = evtEl.getBoundingClientRect()
       const evtItem = { x: evtR.left + evtR.width / 2, y: evtR.top + evtR.height / 2 }
       setDemoCursor(c => ({ ...c, x: evtItem.x, y: evtItem.y }))
