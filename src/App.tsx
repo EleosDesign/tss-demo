@@ -378,28 +378,47 @@ function ReportViewer({ name }: { name: string }) {
       setLoading(false)
       setLoaded(true)
       // send emails immediately after report appears
-      setToastCount(0)
+      setToastCount(1)
       setEmailToast('sending')
-      // animate counter 0→15 over ~4 s; clears on API response
-      let n = 0
+      // Counter always runs 1→15 at 200ms/tick (~2.8 s).
+      // "sent" state fires only after BOTH api AND animation finish.
+      let apiResult: 'sent' | 'error' | null = null
+      let n = 1
       toastCountRef.current = setInterval(() => {
         n++
         setToastCount(n)
-        if (n >= 15) { clearInterval(toastCountRef.current!); toastCountRef.current = null }
-      }, 280)
+        if (n >= 15) {
+          clearInterval(toastCountRef.current!)
+          toastCountRef.current = null
+          // animation done — apply api result if it already arrived
+          if (apiResult === 'sent') {
+            setEmailToast('sent')
+            window.open('https://mail.google.com/#search/Events+Missing+Services', '_blank')
+          } else if (apiResult === 'error') {
+            setEmailToast('error')
+          }
+        }
+      }, 200)
       fetch('/api/send-emails', { method: 'POST' })
         .then(r => r.json())
         .then(d => {
           console.log('[send-emails]', d)
-          if (toastCountRef.current) { clearInterval(toastCountRef.current); toastCountRef.current = null }
-          setToastCount(15)
-          setEmailToast('sent')
-          window.open('https://mail.google.com/#search/Events+Missing+Services', '_blank')
+          if (toastCountRef.current) {
+            // animation still running — save result for when it finishes
+            apiResult = 'sent'
+          } else {
+            // animation already done
+            setEmailToast('sent')
+            window.open('https://mail.google.com/#search/Events+Missing+Services', '_blank')
+          }
         })
         .catch(e => {
           console.error('[send-emails]', e)
-          if (toastCountRef.current) { clearInterval(toastCountRef.current); toastCountRef.current = null }
-          setEmailToast('error')
+          if (toastCountRef.current) {
+            apiResult = 'error'
+          } else {
+            setEmailToast('error')
+          }
         })
     }, 2000)
   }
