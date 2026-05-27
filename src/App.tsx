@@ -731,18 +731,20 @@ export default function App() {
       openCategory('Administration')
       await t(700)
 
-      // ── Step 3: move to Events Missing Services, GMH ──
-      const evtItem = (() => {
+      // ── Step 3: scroll sub-panel so item is visible, then move cursor ──
+      const evtEl = (() => {
         const items = document.querySelectorAll('.report-item')
         for (const item of items) {
-          if (item.textContent?.includes('Events Missing Services')) {
-            const r = item.getBoundingClientRect()
-            return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
-          }
+          if (item.textContent?.includes('Events Missing Services')) return item as HTMLElement
         }
         return null
       })()
-      if (!evtItem) return
+      if (!evtEl) return
+      // Scroll the item into view inside the sub-panel
+      evtEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      await t(600) // wait for scroll to settle
+      const evtR = evtEl.getBoundingClientRect()
+      const evtItem = { x: evtR.left + evtR.width / 2, y: evtR.top + evtR.height / 2 }
       setDemoCursor(c => ({ ...c, x: evtItem.x, y: evtItem.y }))
       await t(700)
       setDemoCursor(c => ({ ...c, clicking: true }))
@@ -1072,7 +1074,6 @@ export default function App() {
           className={`demo-cursor${demoCursor.clicking ? ' demo-cursor--click' : ''}`}
           style={{ left: demoCursor.x, top: demoCursor.y }}
         >
-          <div className="demo-cursor-ring" />
           <svg className="demo-cursor-arrow" width="22" height="26" viewBox="0 0 22 26" fill="none">
             <path d="M2 2L2 20L6.5 15L9.5 22.5L12.5 21.5L9.5 14H17L2 2Z"
               fill="white" stroke="#1a1a1a" strokeWidth="1.5" strokeLinejoin="round"/>
