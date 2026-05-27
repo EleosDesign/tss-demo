@@ -1323,12 +1323,12 @@
   bottom: 32px;
   right: 32px;
   width: 230px;
-  background: linear-gradient(160deg, #14112b 0%, #0d0d1a 100%);
-  border: 1px solid rgba(255,255,255,0.09);
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
   border-radius: 20px;
   padding: 18px 20px 16px;
-  color: #fff;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+  color: #111;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.06);
   animation: rv-toast-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 9999;
 }
@@ -1348,7 +1348,7 @@
 .rv-toast-brand {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255,255,255,0.55);
+  color: rgba(0,0,0,0.45);
   flex: 1;
   letter-spacing: 0.02em;
 }
@@ -1383,7 +1383,7 @@
   font-size: 58px;
   font-weight: 800;
   line-height: 1;
-  color: #fff;
+  color: #0f0f1a;
   font-variant-numeric: tabular-nums;
   letter-spacing: -2px;
 }
@@ -1391,30 +1391,30 @@
 .rv-toast-total {
   font-size: 20px;
   font-weight: 600;
-  color: rgba(255,255,255,0.28);
+  color: rgba(0,0,0,0.22);
   letter-spacing: -0.5px;
 }
 
 .rv-toast-label {
   font-size: 12px;
-  color: rgba(255,255,255,0.42);
+  color: rgba(0,0,0,0.4);
   margin-bottom: 14px;
   letter-spacing: 0.01em;
 }
 
 .rv-toast-divider {
   height: 1px;
-  background: rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.07);
   margin-bottom: 11px;
 }
 
 .rv-toast-status {
   font-size: 12px;
-  color: rgba(255,255,255,0.45);
+  color: rgba(0,0,0,0.4);
   line-height: 1.4;
 }
-.rv-email-toast--sent .rv-toast-status  { color: #4ade80; }
-.rv-email-toast--error .rv-toast-status { color: #f87171; }
+.rv-email-toast--sent .rv-toast-status  { color: #16a34a; }
+.rv-email-toast--error .rv-toast-status { color: #dc2626; }
 
 .rv-toast-close {
   position: absolute;
@@ -1423,10 +1423,10 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.06);
   border: none;
   cursor: pointer;
-  color: rgba(255,255,255,0.55);
+  color: rgba(0,0,0,0.4);
   font-size: 10px;
   display: flex;
   align-items: center;
@@ -1434,7 +1434,7 @@
   transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
 }
-.rv-toast-close:hover { background: rgba(255,255,255,0.2); color: #fff; }
+.rv-toast-close:hover { background: rgba(0,0,0,0.12); color: #111; }
 
 /* ── Agent demo cursor ── */
 .patient-photo-demo-trigger {
@@ -1450,8 +1450,8 @@
   z-index: 99999;
   pointer-events: none;
   transform: translate(-4px, -4px);
-  transition: left 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-              top  0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              top  0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .demo-cursor-arrow {

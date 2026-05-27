@@ -251,7 +251,7 @@ function ReportViewer({ name }: { name: string }) {
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
     }
 
-    async function moveCursorTo(pos: { x: number; y: number }, travel = 260) {
+    async function moveCursorTo(pos: { x: number; y: number }, travel = 180) {
       setRvDemoCursor(c => ({ ...c, x: pos.x, y: pos.y }))
       await t(travel)
     }
@@ -265,7 +265,7 @@ function ReportViewer({ name }: { name: string }) {
 
     async function go() {
       setRvDemoCursor({ x: window.innerWidth / 2, y: 100, visible: true, clicking: false })
-      await t(150)
+      await t(100)
 
       // ── Step 1: Start date → January 1 ──
       const startInput = document.querySelector('input.rv-date') as HTMLElement
@@ -273,7 +273,7 @@ function ReportViewer({ name }: { name: string }) {
       await moveCursorTo(posOf(startInput))
       await doClick()
       startInput.click()
-      await t(180)
+      await t(140)
 
       // Navigate back 4 months (May → Jan) — cursor stays on prev button
       const prevBtn = () => document.querySelector('button.rv-cal-nav') as HTMLElement
@@ -281,11 +281,11 @@ function ReportViewer({ name }: { name: string }) {
       for (let i = 0; i < 4; i++) {
         await doClick()
         prevBtn()?.click()
-        await t(140)
+        await t(110)
       }
 
       // Click January 1
-      await t(80)
+      await t(60)
       const jan1 = (() => {
         for (const cell of document.querySelectorAll('.rv-cal-day')) {
           if (!cell.classList.contains('rv-cal-other') && cell.textContent?.trim() === '1')
@@ -297,7 +297,7 @@ function ReportViewer({ name }: { name: string }) {
       await moveCursorTo(posOf(jan1))
       await doClick()
       jan1.click()
-      await t(200) // calendar closes
+      await t(160) // calendar closes
 
       // ── Step 2: Staff codes ──
       const staffInput = document.querySelectorAll('input.rv-input.rv-code')[0] as HTMLElement
@@ -305,7 +305,7 @@ function ReportViewer({ name }: { name: string }) {
       await moveCursorTo(posOf(staffInput))
       await doClick()
       staffInput.click()
-      await t(160)
+      await t(120)
 
       const staffSug = (() => {
         for (const el of document.querySelectorAll('.rv-staff-suggestion')) {
@@ -315,14 +315,14 @@ function ReportViewer({ name }: { name: string }) {
       })()
       if (!staffSug) return
       staffSug.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-      await t(150)
+      await t(120)
       await moveCursorTo(posOf(staffSug))
       staffSug.classList.add('rv-staff-demo-hover')
-      await t(550)
+      await t(450)
       staffSug.classList.remove('rv-staff-demo-hover')
       await doClick()
       staffSug.click()
-      await t(160)
+      await t(120)
 
       // ── Step 3: Attendance ──
       const attendInput = document.querySelector('input.rv-attend-input') as HTMLElement
@@ -330,7 +330,7 @@ function ReportViewer({ name }: { name: string }) {
       await moveCursorTo(posOf(attendInput))
       await doClick()
       attendInput.click()
-      await t(160)
+      await t(120)
 
       for (const optText of ['ARV', 'CMP', 'SCH']) {
         const label = (() => {
@@ -341,27 +341,27 @@ function ReportViewer({ name }: { name: string }) {
         })()
         if (!label) continue
         label.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-        await t(120)
-        await moveCursorTo(posOf(label), 220)
+        await t(90)
+        await moveCursorTo(posOf(label), 160)
         await doClick()
         const cb = label.querySelector('input[type="checkbox"]') as HTMLElement
         cb?.click()
-        await t(140)
+        await t(110)
       }
 
       // Close attendance dropdown
       const overlay = document.querySelector('.rv-cal-overlay') as HTMLElement
       overlay?.click()
-      await t(150)
+      await t(120)
 
       // ── Step 4: View Report ──
       const viewBtn = document.querySelector('.rv-view-btn') as HTMLElement
       if (!viewBtn) return
       await moveCursorTo(posOf(viewBtn))
-      await t(80) // brief hover
+      await t(60) // brief hover
       await doClick()
       viewBtn.click()
-      await t(200)
+      await t(160)
 
       setRvDemoCursor(c => ({ ...c, visible: false }))
     }
@@ -847,18 +847,18 @@ export default function App() {
       if (!avatar) return
       setDemoCursor({ x: avatar.x, y: avatar.y, visible: true, clicking: false })
 
-      await t(150)
+      await t(100)
 
       // ── Step 1: move to Reports icon ──
       const rep = getCenterOf('[title="Reports"]')
       if (!rep) return
       setDemoCursor(c => ({ ...c, x: rep.x, y: rep.y }))
-      await t(320)
+      await t(220)
       setDemoCursor(c => ({ ...c, clicking: true }))
-      await t(100)
+      await t(90)
       setDemoCursor(c => ({ ...c, clicking: false }))
       openReports()
-      await t(320)
+      await t(220)
 
       // ── Step 2: move to Administration row ──
       const admin = (() => {
@@ -873,12 +873,12 @@ export default function App() {
       })()
       if (!admin) return
       setDemoCursor(c => ({ ...c, x: admin.x, y: admin.y }))
-      await t(320)
+      await t(220)
       setDemoCursor(c => ({ ...c, clicking: true }))
-      await t(100)
+      await t(90)
       setDemoCursor(c => ({ ...c, clicking: false }))
       openCategory('Administration')
-      await t(320)
+      await t(220)
 
       // ── Step 3: scroll sub-panel so item is visible, then move cursor ──
       const evtEl = (() => {
@@ -891,20 +891,20 @@ export default function App() {
       if (!evtEl) return
       // Scroll the item into view inside the sub-panel
       evtEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
-      await t(300) // wait for scroll to settle
+      await t(220) // wait for scroll to settle
       const evtR = evtEl.getBoundingClientRect()
       const evtItem = { x: evtR.left + evtR.width / 2, y: evtR.top + evtR.height / 2 }
       setDemoCursor(c => ({ ...c, x: evtItem.x, y: evtItem.y }))
-      await t(320) // cursor travels to item
+      await t(220) // cursor travels to item
       // Hover: highlight the row so user can see what's selected
       evtEl.classList.add('report-item--demo-hover')
-      await t(700) // pause so user can read the label
+      await t(600) // pause so user can read the label
       evtEl.classList.remove('report-item--demo-hover')
       setDemoCursor(c => ({ ...c, clicking: true }))
-      await t(100)
+      await t(90)
       setDemoCursor(c => ({ ...c, clicking: false }))
       window.open(`?report=${encodeURIComponent('Events Missing Services, GMH')}&demo=1`, '_blank')
-      await t(250)
+      await t(180)
 
       setDemoCursor(c => ({ ...c, visible: false }))
     }
